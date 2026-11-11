@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111827">
+  <title>Market Placement Navigator</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-group">
+      <img src="smatrix-logo.svg" alt="SMWEtrics logo" class="brand-logo smatrix-logo">
+      <img src="matrix.gif" alt="Matrix animation" class="brand-gif">
+    </div>
+    <button id="export-button" class="button button-secondary" disabled>Export Current View</button>
+  </header>
+
+  <main>
+    <section class="panel import-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">LOCAL FILE IMPORT</p>
+          <h2>Refresh Data</h2>
+          <p class="muted">Choose a CSV or XLSX file. Your data stays in this browser.</p>
+        </div>
+        <label class="button button-primary file-button">
+          Load File
+          <input id="file-input" type="file" accept=".csv,.xlsx,.xls">
+        </label>
+      </div>
+      <p id="file-status" class="status" role="status">No data loaded yet.</p>
+      <div id="import-error" class="error" role="alert" hidden></div>
+    </section>
+
+    <section class="panel filter-panel" aria-label="Filters">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">EXPLORE YOUR DATA</p>
+          <h2>Filters</h2>
+        </div>
+        <button id="reset-filters" class="text-button" disabled>Reset filters</button>
+      </div>
+      <div class="filter-grid">
+        <div class="filter-control">
+          <label class="filter-label" for="state-search">State</label>
+          <input id="state-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="state-menu" class="check-menu" aria-label="State filter"></div>
+        </div>
+        <div class="filter-control">
+          <label class="filter-label" for="city-search">City</label>
+          <input id="city-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="city-menu" class="check-menu" aria-label="City filter"></div>
+        </div>
+        <div class="filter-control">
+          <label class="filter-label" for="premise-search">Premise</label>
+          <input id="premise-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="premise-menu" class="check-menu" aria-label="Premise filter"></div>
+        </div>
+        <div id="trade-filter-control" class="filter-control" hidden>
+          <label class="filter-label" for="trade-search">Trade Channel</label>
+          <input id="trade-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="trade-menu" class="check-menu" aria-label="Trade Channel filter"></div>
+        </div>
+        <label class="single-select-block">
+          Date Range
+          <select id="date-filter" disabled>
+            <option value="all" selected>All Dates</option>
+            <option value="ytd">YTD</option>
+            <option value="30">Last 30 Days</option>
+            <option value="60">Last 60 Days</option>
+            <option value="90">Last 90 Days</option>
+          </select>
+        </label>
+        <label class="single-select-block">
+          View Type
+          <select id="view-filter" disabled>
+            <option value="brand">Brand View</option>
+            <option value="account">Account View</option>
+          </select>
+        </label>
+        <div class="filter-control">
+          <label class="filter-label" for="entity-search" id="entity-label">Brand</label>
+          <input id="entity-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="entity-menu" class="check-menu" aria-label="Brand or Account filter"></div>
+        </div>
+        <div class="filter-control" id="item-filter-control" hidden>
+          <label class="filter-label" for="item-search">Item</label>
+          <input id="item-search" class="search-input" type="text" placeholder="Type to search..." disabled>
+          <div id="item-menu" class="check-menu" aria-label="Item filter"></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div><p class="eyebrow">CURRENT SELECTION</p><h2>Overview</h2></div>
+      </div>
+      <div class="kpi-grid">
+        <article class="kpi-card"><span>Records</span><strong id="kpi-records">—</strong></article>
+        <article class="kpi-card"><span>Accounts</span><strong id="kpi-accounts">—</strong></article>
+        <article class="kpi-card"><span>Brands</span><strong id="kpi-brands">—</strong></article>
+        <article class="kpi-card"><span>Cities</span><strong id="kpi-cities">—</strong></article>
+        <article class="kpi-card kpi-accent"><span>Volume</span><strong id="kpi-volume">—</strong></article>
+      </div>
+    </section>
+
+    <section class="panel detail-panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow" id="detail-eyebrow">BRAND INSIGHTS</p>
+          <h2 id="detail-title">Brand Dashboard</h2>
+        </div>
+      </div>
+      <div id="detail-content" class="detail-grid empty-state">Import a file to see brand and account details.</div>
+    </section>
+
+    <section>
+      <div class="section-heading">
+        <div><p class="eyebrow">AUTOMATICALLY UPDATED</p><h2>Charts</h2></div>
+      </div>
+      <div class="chart-grid">
+        <article class="panel chart-card"><h3>Volume by City <small>Top 10</small></h3><div class="chart-wrap"><canvas id="city-chart"></canvas></div></article>
+        <article class="panel chart-card"><h3>Top Accounts <small>by volume</small></h3><div class="chart-wrap"><canvas id="account-chart"></canvas></div></article>
+        <article class="panel chart-card"><h3>Top Products <small>by volume</small></h3><div class="chart-wrap"><canvas id="product-chart"></canvas></div></article>
+        <article class="panel chart-card"><h3>Monthly Trend <small>volume</small></h3><div class="chart-wrap"><canvas id="trend-chart"></canvas></div></article>
+        <article class="panel chart-card"><h3>Business by Premise <small>% of volume</small></h3><div class="chart-wrap"><canvas id="premise-share-chart"></canvas></div></article>
+        <article class="panel chart-card"><h3>Business by Trade Channel <small>% of volume</small></h3><div class="chart-wrap"><canvas id="trade-share-chart"></canvas></div></article>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">ACCOUNT CLASSIFICATION</p><h2>Chain Analytics</h2></div>
+      </div>
+      <p class="muted">Includes recognized chain names and accounts classified as Off Premise Chain.</p>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Chain / Category</th><th>Volume</th><th>Accounts</th><th>Brands</th><th>Products</th></tr></thead>
+          <tbody id="chain-table"><tr><td colspan="5" class="muted">Import a file to see chain analytics.</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div><p class="eyebrow">PREMISE AND CHANNEL BREAKDOWN</p><h2>Channel Analytics</h2></div>
+      </div>
+      <div id="channel-analytics-grid" class="analytics-grid"></div>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">FIRST PURCHASE THIS YEAR · LAST 30 DAYS</p>
+          <h2>New Placements</h2>
+          <p class="muted">A placement is listed when an account’s first purchase of a product this year occurred in the last 30 days.</p>
+        </div>
+      </div>
+      <div class="new-placements-grid">
+        <section class="placement-card" aria-labelledby="on-premise-placements-title">
+          <h3 id="on-premise-placements-title">On Premise Placements</h3>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Account Name</th><th>Account City</th><th>New Product Placed</th></tr></thead>
+              <tbody id="on-premise-placements"><tr><td colspan="3" class="muted">Import a file to see new placements.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+        <section class="placement-card" aria-labelledby="off-premise-placements-title">
+          <h3 id="off-premise-placements-title">Off Premise Placements</h3>
+          <div class="table-scroll">
+            <table>
+              <thead><tr><th>Account Name</th><th>Account City</th><th>New Product Placed</th></tr></thead>
+              <tbody id="off-premise-placements"><tr><td colspan="3" class="muted">Import a file to see new placements.</td></tr></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <footer>Market Placement Navigator · Data is processed locally in your browser.</footer>
+  </main>
+</body>
+</html>
